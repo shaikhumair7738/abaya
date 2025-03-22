@@ -2495,10 +2495,21 @@ $inv_prefix = '';
 					
 					Event::trigger('invoices/markpaid/',$invoice=$d);
 					_msglog('s', 'Invoice marked as Paid');
+					$crm_account = ORM::for_table('crm_accounts')->where('id', $d['userid'])->find_one();
+                    $phone = ($crm_account) ? $crm_account->phone : ''; // Assuming 'phone' is the column name
+					$_url = U;
+                    $ordertrack_url = $_url . "client/iview/{$d['id']}/token_{$d['vtoken']}";
+                    $name = ucwords($d->account);
+                    $invoicenumber = $d->invoicenum;
+                    $paymentstatus = ucwords($d->status); // Use the status directly from $d
+                    $orderstatus = ucwords($d->delivery_status);
+					
+					wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone);
         } else {
 					_msglog('e', 'Invoice not found');
         }
-        break;
+        
+    break;
 
         case 'd_status':
 
@@ -2512,6 +2523,16 @@ $inv_prefix = '';
         if ($d) 
         {
             $d->delivery_status = $d_status;
+            
+            // Check if the status is completed
+            if ($d_status === 'completed') {
+                // Calculate the reminder date (current date + 2 days)
+                $reminder_date = date('Y-m-d', strtotime('+2 days'));
+                $d->reminder_date = $reminder_date;
+            }else{
+                $d->reminder_date = null;
+            }
+            
             $d->save();
 
             $s = ORM::for_table('sys_invoices_status')->create();
@@ -2526,6 +2547,16 @@ $inv_prefix = '';
 
             //_msglog('s', 'Invoice marked as '.$d_status.'');
             //r2(U . 'invoices/view/'.$iid, 's', 'Delivery status marked as '.$d_status.'');
+            
+            $_url = U;
+            $ordertrack_url = $_url . "client/iview/{$d['id']}/token_{$d['vtoken']}";
+            $name = ucwords($d->account);
+            $invoicenumber = $d->invoicenum;
+            $paymentstatus = ucwords($d->status); // Use the status directly from $d
+            $orderstatus = ucwords($d->delivery_status);
+			
+			wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone);
+            
             echo $s->id();
         } 
         else 
@@ -2547,6 +2578,17 @@ $inv_prefix = '';
             //$pro_d->status = 'Unpaid';
             //$pro_d->save();
             _msglog('s', 'Invoice marked as Un Paid');
+            
+            $crm_account = ORM::for_table('crm_accounts')->where('id', $d['userid'])->find_one();
+            $phone = ($crm_account) ? $crm_account->phone : ''; // Assuming 'phone' is the column name
+            $_url = U;
+            $ordertrack_url = $_url . "client/iview/{$d['id']}/token_{$d['vtoken']}";
+            $name = ucwords($d->account);
+            $invoicenumber = $d->invoicenum;
+            $paymentstatus = ucwords($d->status); // Use the status directly from $d
+            $orderstatus = ucwords($d->delivery_status);
+			
+			wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone);
         } else {
             _msglog('e', 'Invoice not found');
         }
@@ -2566,6 +2608,16 @@ $inv_prefix = '';
             //$pro_d->status = 'Cancelled';
             //$pro_d->save();
             _msglog('s', 'Invoice marked as Cancelled');
+            $crm_account = ORM::for_table('crm_accounts')->where('id', $d['userid'])->find_one();
+            $phone = ($crm_account) ? $crm_account->phone : ''; // Assuming 'phone' is the column name
+            $_url = U;
+            $ordertrack_url = $_url . "client/iview/{$d['id']}/token_{$d['vtoken']}";
+            $name = ucwords($d->account);
+            $invoicenumber = $d->invoicenum;
+            $paymentstatus = ucwords($d->status); // Use the status directly from $d
+            $orderstatus = ucwords($d->delivery_status);
+			
+			wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone);
         } else {
             _msglog('e', 'Invoice not found');
         }
@@ -2585,6 +2637,17 @@ $inv_prefix = '';
             //$pro_d->status = 'Partially Paid';
             //$pro_d->save();
             _msglog('s', 'Invoice marked as Partially Paid');
+            
+            $crm_account = ORM::for_table('crm_accounts')->where('id', $d['userid'])->find_one();
+            $phone = ($crm_account) ? $crm_account->phone : ''; // Assuming 'phone' is the column name
+            $_url = U;
+            $ordertrack_url = $_url . "client/iview/{$d['id']}/token_{$d['vtoken']}";
+            $name = ucwords($d->account);
+            $invoicenumber = $d->invoicenum;
+            $paymentstatus = ucwords($d->status); // Use the status directly from $d
+            $orderstatus = ucwords($d->delivery_status);
+			
+			wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone);
         } else {
             _msglog('e', 'Invoice not found');
         }
@@ -2794,7 +2857,343 @@ function showDiv(elem){
 
 </script>';
         break;        
+        
+        
+    case 'add-delivey-status2':
 
+    Event::trigger('invoices/add-delivey-status2/');
+    $sid = $routes['2'];
+    $invoiceId = $sid;
+
+    // Fetch the invoice data containing only the 'id' and 'delivery_status' columns
+    $invoice = ORM::for_table('sys_invoices')
+        ->select('id')
+        ->select('delivery_status')
+        ->where('id', $invoiceId)
+        ->find_one();
+        
+    // var_dump($invoiceId);
+    $deliveryStatus = $invoice ? $invoice->delivery_status : null;
+    // var_dump($deliveryStatus);
+    
+    // If you want to display it in your form within an HTML element:
+    // if ($deliveryStatus !== null) {
+    //     echo '<p>Delivery Status: <b> ' . ucfirst($deliveryStatus) . ' </b></p>';
+    // } else {
+    //     echo '<p>No delivery status found for this invoice.</p>';
+    // }
+
+    // Fetch employee names from crm_accounts and merge with invoice_alocation
+    $invoice_alocation = ORM::for_table('invoice_alocation')
+        ->select('invoice_alocation.*')
+        ->select('crm_accounts.account', 'employee_name')
+        ->join('crm_accounts', array('invoice_alocation.employee_id', '=', 'crm_accounts.id'))
+        ->where('invoice_id', $invoiceId)
+        ->find_array();
+        
+    // Fetch category data
+    // $categories = ORM::for_table('category_employee')->find_many();
+    // $categoryData = [];
+    // foreach ($categories as $category) {
+    //     $categoryData[] = [
+    //         'id' => $category->id,
+    //         'name' => $category->name,
+    //         'price' => $category->price,
+    //     ];
+    // }
+
+    $designItem = ORM::for_table('sys_invoiceitems')
+        ->select('design_id')
+        ->where('invoiceid', $invoiceId)
+        ->where('item_type', 'design')
+        ->order_by_asc('id') // Ensures the first record is selected
+        ->find_one();
+    
+    $designId = $designItem ? $designItem->design_id : null;
+    
+    // var_dump($designId);
+    
+    if ($designId) {
+        $sysDesigns = ORM::for_table('sys_designs')
+            ->select('category_pricing')
+            ->where('id', $designId)
+            ->find_one();
+        
+        // Decode category pricing JSON
+        $categoryPricing = !empty($sysDesigns->category_pricing) ? json_decode($sysDesigns->category_pricing, true) : [];
+
+    }
+    
+    // Fetch category employee data
+    $categoryEmployees = ORM::for_table('category_employee')->find_many();
+    
+    // Prepare category data with associated pricing
+    $categoryData = [];
+    foreach ($categoryEmployees as $category) {
+        $price = $category->price ?? 0; // Default price from category_employee if available
+    
+        if (!empty($categoryPricing)) {
+            foreach ($categoryPricing as $pricing) {
+                if ($pricing['category_id'] == $category->id) {
+                    $price = $pricing['price']; // Override with design-specific price if available
+                    break;
+                }
+            }
+        }
+    
+        $categoryData[] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'price' => $price,
+        ];
+    }
+
+    $ui->assign('deliveryStatus', $deliveryStatus);
+    $ui->assign('invoiceId', $invoiceId);
+    $ui->assign('categoryData', $categoryData);
+    $ui->assign('invoice_alocation', $invoice_alocation);
+    $ui->display('select-employee-form.tpl');
+    break;
+    
+    case 'add-delivey-status22333':
+    Event::trigger('invoices/add-delivey-status2/');
+    $sid = $routes['2'];
+    $invoiceId = $sid;
+          
+    // Check if the invoice exists
+    $invoice_alocation = ORM::for_table('invoice_alocation')->where('invoice_id', $invoiceId)->find_many();
+    // var_dump($invoiceExists);
+
+    // Fetch category data
+    $categories = ORM::for_table('category_employee')->find_many();
+    $categoryData = [];
+    foreach ($categories as $category) {
+        $categoryData[] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'price' => $category->price,
+        ];
+    }
+
+    // Fetch employee names from crm_accounts and merge with invoice_alocation
+    $invoice_alocation = ORM::for_table('invoice_alocation')
+        ->select('invoice_alocation.*')
+        ->select('crm_accounts.account', 'employee_name')
+        ->join('crm_accounts', array('invoice_alocation.employee_id', '=', 'crm_accounts.id'))
+        ->find_array();
+
+    // Now $mergedData contains the merged data with employee names included
+    // Assign variables to the template
+    $ui->assign('$data', $data);
+    $ui->assign('invoiceId', $invoiceId);
+    $ui->assign('categoryData', $categoryData);
+    
+    if ($invoice_alocation) {    
+        $ui->assign('invoice_alocation', $invoice_alocation);
+    } else {
+        // If there are no records, assign an empty array to $invoice_alocation
+        $ui->assign('invoice_alocation', []);
+    }
+    
+    $ui->display('select-employee-form.tpl');
+    break;
+
+    
+    case 'add-delivey-status123':
+    Event::trigger('invoices/add-delivey-status2/');
+    $sid = $routes['2'];
+    $invoiceId = $sid;
+          
+    // Check if the invoice exists
+    $invoiceExists = ORM::for_table('invoice_alocation')->where('invoice_id', $invoiceId)->count();
+    // var_dump($invoiceExists);
+
+    // Initialize an empty array for invoice allocations
+    $invoiceAllocations = [];
+    
+    // Fetch invoice allocations only if the invoice exists
+    if ($invoiceExists) {
+        $invoiceAllocations = ORM::for_table('invoice_alocation')->where('invoice_id', $invoiceId)->find_many();
+        var_dump($invoiceAllocations);
+    }
+    
+    // Fetch category data
+    $categories = ORM::for_table('category_employee')->find_many();
+    $categoryData = [];
+    foreach ($categories as $category) {
+        $categoryData[] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'price' => $category->price,
+            'employee_id' => $category->employee_id
+        ];
+    }
+
+    // Assign variables to the template
+    $ui->assign('invoiceId', $invoiceId);
+    $ui->assign('categoryData', $categoryData);
+    $ui->assign('invoiceExists', $invoiceExists);
+    $ui->assign('invoiceAllocations', $invoiceAllocations);
+    $ui->display('select-employee-form.tpl');
+    break;
+
+    
+    case 'fetch-employee-invoice':
+    Event::trigger('invoices/fetch-employee-invoice/');
+    
+    // Fetch data from the crm_accounts table
+    $accounts = ORM::for_table('crm_accounts')->where('employee_category_id', $_GET['categoryId'])->find_many();
+    
+    // var_dump($accounts);
+    
+    $option = '<option value="">Select Employee</option>';
+    foreach ($accounts as $account) {
+        
+    $option .= '<option value="'.$account->id.'"> '. $account->account .' </option> ';
+        
+        // $accountData[] = [
+        //     'id' => $account->id,
+        //     'account' => $account->account,
+        //     'employee_category_id' => $account->employee_category_id
+        // ];
+    }
+
+    // echo '<pre>';
+    // print_r($option);
+    // echo '</pre>';
+    // var_dump($option);
+    // Return data as JSON
+    
+    echo $option;
+    
+    break;
+    
+       
+   case 'employee-invoice-form':
+    
+    Event::trigger('invoices/employee-invoice-form/');
+    
+    $invoice_alocation = ORM::for_table('invoice_alocation');
+    $invoiceId = $_POST['invoiceId'];
+    $queryupdate = $_POST['queryupdate']; // Check if it's set to 1 for update
+    $rowCount = count($_POST['categoryId']);
+    
+    if(isset($_POST['id'])){
+        $submittedIds = array_filter($_POST['id']); // Filter out empty ids
+    }
+    
+    // Get the existing ids from the database
+    $existingIds = ORM::for_table('invoice_alocation')->select('id')->where('invoice_id', $invoiceId)->find_array();
+    $existingIds = array_column($existingIds, 'id');
+    
+    if(!empty($existingIds && $submittedIds)){
+        // Identify deleted records by comparing submitted ids with existing ids
+        $deletedIds = array_diff($existingIds, $submittedIds);
+    }
+
+    // Remove deleted records from the database
+    if (!empty($deletedIds)) {
+        $invoice_alocation->where_in('id', $deletedIds)->delete_many();
+    }
+    
+    for ($i = 0; $i < $rowCount; $i++) {
+        $categoryId = $_POST['categoryId'][$i];
+        $quantity = $_POST['quantity'][$i];
+        $price = $_POST['price'][$i];
+        $employeeId = $_POST['employeeId'][$i];
+
+        // Check if the 'id' index exists in the $_POST array for each iteration
+        if (isset($_POST['id'][$i])) {
+            $Id = $_POST['id'][$i];
+            var_dump($Id);
+
+            // Check if $Id is not empty or null before querying the database
+            if ($Id !== null && $Id !== '') {
+                // Check if records already exist for the current invoice, category, and employee
+                $existingRecord = ORM::for_table('invoice_alocation')->where('id', $Id)->find_one();
+
+                if ($queryupdate == '1' && $existingRecord) {
+                    // Update the existing record
+                    $existingRecord->set('category_id', $categoryId);
+                    $existingRecord->set('qty', $quantity);
+                    $existingRecord->set('price', $price);
+                    $existingRecord->set('employee_id', $employeeId);
+                    $existingRecord->save();
+                }
+            }
+        } else {
+            // Create a new record only if 'id' is not provided
+            $newRecord = $invoice_alocation->create();
+            $newRecord->invoice_id = $invoiceId;
+            $newRecord->category_id = $categoryId;
+            $newRecord->employee_id = $employeeId;
+            $newRecord->qty = $quantity;
+            $newRecord->price = $price;
+            $newRecord->status = 'pending';
+            $newRecord->save(); // Save data to the database
+                        
+            $d = ORM::for_table('sys_invoices')->find_one($invoiceId);
+            $invoicenumber = $d->invoicenum;
+
+            // Send email to the employee
+            $employee = ORM::for_table('crm_accounts')->where('id', $employeeId)->find_one();
+            if ($employee) {
+                $to = $employee->email;
+                $username = $employee->name;
+                $subject = "Invoice Assigned";
+                $txt = "You have been assigned an invoice <b>" . $invoicenumber . "</b>. Please check your account for details.";
+                // $txt = "You have been assigned an invoice <b>" . $invoiceId . "</b>. Please check your account for details.";
+                $headers = ""; // Add any necessary headers
+                send_email_brevo_api($to, $username, $subject, $txt, $headers);
+                // Update email status
+                $newRecord->email_status = 1;
+                $newRecord->save();
+            }
+        }
+    }
+
+    break;
+    
+   case 'employee-invoice-form-proceed':
+    // Get invoice ID from the form
+    $invoiceId = $_POST['invoiceId'];
+
+    // Update status to 1 for all records of the invoice in the invoice_alocation table
+    $invoiceAllocations = ORM::for_table('invoice_alocation')
+        ->where('invoice_id', $invoiceId)
+        ->find_many();
+
+    foreach ($invoiceAllocations as $allocation) {
+        $allocation->status = 1;
+        $allocation->save();
+        
+        // Get allocation details
+        $allocationId = $allocation->id;
+        $categoryId = $allocation->category_id;
+        $employeeId = $allocation->employee_id;
+        $quantity = $allocation->qty;
+        $price = $allocation->price;
+
+        // Extract date from created_at
+        $createdAtDate = date('Y-m-d', strtotime($allocation->created_at));
+        
+        // Calculate earn amount
+        $earnAmount = $quantity * $price;
+
+        // Insert data into crm_timesheet table
+        $timesheetEntry = ORM::for_table('crm_timesheet')->create();
+        $timesheetEntry->invoice_alocation_id = $allocationId; // Map allocation ID
+        $timesheetEntry->employee_id = $employeeId;
+        // $timesheetEntry->date = date('Y-m-d'); // Assuming today's date
+        $timesheetEntry->date = $createdAtDate; // Use extracted date
+        $timesheetEntry->amount = $price;
+        $timesheetEntry->qty = $quantity;
+        $timesheetEntry->earn_amount = $earnAmount;
+        $timesheetEntry->created_at = date('Y-m-d H:i:s');
+        $timesheetEntry->updated_at = date('Y-m-d H:i:s');
+        $timesheetEntry->save();
+    }
+    break;
 
     case 'add-proforma-payment':
 

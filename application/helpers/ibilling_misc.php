@@ -1262,3 +1262,112 @@ function qrcode_generate($text)
     return $file;
 }
 
+function wati_notifiation($name, $invoicenumber, $paymentstatus, $orderstatus, $ordertrack_url, $phone){
+
+    $curl = curl_init();
+    
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => 'https://live-server-115146.wati.io/api/v2/sendTemplateMessages',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => 'POST',
+      CURLOPT_POSTFIELDS =>'{
+      "template_name": "order_status2",
+      "broadcast_name": "order_status2",
+      "receivers": [
+        {
+          "whatsappNumber": "' . $phone . '",
+          "customParams": [
+                    {
+                        "name": "name",
+                        "value": "' . $name . '"
+                    },
+                    {
+                        "name": "order_number",
+                        "value": "' . $invoicenumber . '"
+                    },
+                    {
+                        "name": "order_payment_status",
+                        "value": "' . $paymentstatus . '"
+                    },
+                    {
+                        "name": "order_status_url",
+                        "value": "' . $orderstatus . '"
+                    },
+                    {
+                        "name": "order_status_url_partial_variable",
+                        "value": "' . $ordertrack_url . '"
+                    }
+                ]
+        }
+      ]
+    }',
+      CURLOPT_HTTPHEADER => array(
+        'accept: */*',
+        'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiMTZhZThiZC04NmNiLTQ4YTItOTkwZS0yOGViNTRlN2Q2OGEiLCJ1bmlxdWVfbmFtZSI6ImNvbnRhY3RAYWJheWFkZXNpZ25lci5jb20iLCJuYW1laWQiOiJjb250YWN0QGFiYXlhZGVzaWduZXIuY29tIiwiZW1haWwiOiJjb250YWN0QGFiYXlhZGVzaWduZXIuY29tIiwiYXV0aF90aW1lIjoiMDEvMDkvMjAyNCAwNTo0Njo1MiIsImRiX25hbWUiOiIxMTUxNDYiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.ek5oVVij0bYtUfQFbug2OXbcJNg_WQd-KIQFJMMjt8Q',
+        'Content-Type: application/json-patch+json',
+        'Cookie: affinity=1704793805.327.42379.834121|4101bd3ddf1811378a5246c0880e0831'
+      ),
+    ));
+    
+    $response = curl_exec($curl);
+    
+    curl_close($curl);
+    
+    return $response;
+
+}
+
+function send_email_brevo_api($to, $username, $subject, $txt, $headers) {
+    
+    // API endpoint
+    $url = 'https://api.brevo.com/v3/smtp/email';
+
+    // API key from config
+    $apiKey = BREVO_API_KEY;
+    
+    // Data to be sent
+    $data = array(
+        "sender" => array(
+            "name" => "Abaya Designer",
+            "email" => "contact@abayadesigner.com"
+        ),
+        "to" => array(
+            array(
+                "email" => $to,
+                "name" => $username
+            )
+        ),
+        "subject" => $subject,
+        "htmlContent" => $txt
+    );
+    
+    // Convert data to JSON format
+    $postData = json_encode($data);
+    
+    // Initialize cURL session
+    $ch = curl_init($url);
+    
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'accept: application/json',
+        'api-key: ' . $apiKey,
+        'content-type: application/json'
+    ));
+    
+    // Execute cURL session
+    $response = curl_exec($ch);
+    
+    // Close cURL session
+    curl_close($ch);
+    
+    // Output response
+    //echo $response;    
+}
