@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `mbillsin_alabaya`
+-- Database: `mbillsin_alabayav3`
 --
 
 -- --------------------------------------------------------
@@ -29,12 +29,12 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `category_employee` (
   `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `price` decimal(10,2) NOT NULL,
-  `status` tinyint(1) NOT NULL,
-  `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `status` tinyint(4) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -294,19 +294,19 @@ CREATE TABLE `crm_sales_transaction` (
 CREATE TABLE `crm_timesheet` (
   `id` int(11) NOT NULL,
   `employee_id` int(11) NOT NULL,
-  `emp_code` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `emp_code` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `checkin` datetime DEFAULT NULL,
   `checkout` datetime DEFAULT NULL,
   `qty` decimal(10,2) DEFAULT '0.00' COMMENT 'per hour / piece qty',
   `amount` float DEFAULT '0' COMMENT 'per hour / piece rate',
   `earn_amount` decimal(10,2) DEFAULT '0.00',
-  `remarks` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `remarks` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `invoice_alocation_id` int(11) DEFAULT NULL,
   `date` date DEFAULT NULL,
-  `transaction_id` varchar(155) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `transaction_id` varchar(155) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -354,7 +354,7 @@ CREATE TABLE `invoice_alocation` (
   `email_status` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -602,6 +602,7 @@ CREATE TABLE `sys_designs` (
   `stones` longtext,
   `handworks` longtext,
   `others` longtext,
+  `category_pricing` longtext,
   `timestamp` varchar(60) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1723,7 +1724,7 @@ ALTER TABLE `hrm_employees`
 --
 ALTER TABLE `invoice_alocation`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `invoice_id` (`invoice_id`);
+  ADD KEY `invoice_alocation_invoice_id` (`invoice_id`);
 
 --
 -- Indexes for table `pl_assets`
@@ -2062,6 +2063,12 @@ ALTER TABLE `wm_sysemails`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `category_employee`
+--
+ALTER TABLE `category_employee`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `crm_accounts`
