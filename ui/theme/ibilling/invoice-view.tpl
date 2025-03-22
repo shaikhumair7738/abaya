@@ -35,8 +35,13 @@
 								<li><a href="{$_url}invoices/d_status/&s=processing&iid={$d['id']}&mobile={$a['phone']}">Processing</a></li>
 								<li><a href="{$_url}invoices/d_status/&s=completed&iid={$d['id']}&mobile={$a['phone']}">Completed</a></li>
 							</ul>
-						</div>-->	
+						</div>-->		
+						
+						
+						<button type="button" data-inv-id="{$d['id']}" data-phone="{$a['phone']}" class="btn  btn-primary btn-sm" id="delivery_status2"><i class="fa fa-ellipsis-v"></i> Select Employee</button>
+						
 						<button type="button" data-inv-id="{$d['id']}" data-phone="{$a['phone']}" class="btn  btn-primary btn-sm" id="delivery_status"><i class="fa fa-ellipsis-v"></i> Delivery</button>				
+						
 					<div class="btn-group" role="group">
 						<button type="button" class="btn  btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
 								<i class="fa fa-ellipsis-v"></i>  {$_L['Mark As']}

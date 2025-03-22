@@ -33,6 +33,7 @@
                                 </div>
                             </div>
                         </form>-->
+                        <div class="table-responsive">
                         <table id="contact-datatable" class="table table-bordered datatable">
                             <thead>
                             <tr>
@@ -59,6 +60,7 @@
                             {/foreach}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -51,6 +51,16 @@ $(document).ready(function () {
 
     });  
     
+    sysrender.on('click', '#delivery_status2', function(e){
+        e.preventDefault();
+        var iid = $("#iid").val();
+        $('body').modalmanager('loading');
+        $modal.load( _url + 'invoices/add-delivey-status2/' + iid, '', function(){
+            $modal.modal();
+        });
+
+    });
+    
     $modal.on('click', '#update_delivery_status', function(){
         $modal.modal('loading');
         var _url = $("#_url").val();

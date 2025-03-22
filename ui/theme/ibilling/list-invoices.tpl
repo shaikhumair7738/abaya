@@ -74,6 +74,7 @@
                         {/if}
                         <th>{$_L['Invoice Date']}</th>
                         <th>Delivery date</th>
+                        <th>Reminder date</th>
                         <th>
                             Payment Status
                         </th>
@@ -105,6 +106,7 @@
 
                             <td data-value="{strtotime($ds['date'])}">{date( $_c['df'], strtotime($ds['date']))}</td>
                             <td data-value="{strtotime($ds['duedate'])}">{date( $_c['df'], strtotime($ds['duedate']))}</td>
+                            <td data-value="{strtotime($ds['reminder_date'])}">{$ds['reminder_date']}</td>
                             <td>
 
                                 {if $ds['status'] eq 'Unpaid'}

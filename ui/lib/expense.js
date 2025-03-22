@@ -207,15 +207,16 @@ $(document).ready(function () {
             pmethod: $('#pmethod').val(),
             ref: $('#ref').val(),
             invoice_id: $('#invoice_id').val(),
-            vendor_id: $('#vendor_id').val()
-
+            vendor_id: $('#vendor_id').val(),
+            timesheet_ids: $('#timesheet_ids').val() 
         })
             .done(function (data) {
                 var sbutton = $("#submit");
                 var _url = $("#_url").val();
                 if ($.isNumeric(data)) {
-
-                    location.reload();
+                    // Reload page without params
+                    window.location.href = _url + 'transactions/expense';
+                    // location.reload();
                 }
                 else {
                     $('#ibox_form').unblock();

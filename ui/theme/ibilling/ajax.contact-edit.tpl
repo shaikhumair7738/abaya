@@ -78,6 +78,41 @@
         </div>
     </div>
 
+    <div id="categoryDropdown" class="form-group" style="display: none;">
+        <label class="col-lg-2 control-label" for="group">{$_L['Category']} </label>
+        <div class="col-lg-10">
+            <select class="form-control" id="categoryId" name="categoryId" required>
+                {foreach $categoryData as $category}
+                    <option value="{$category['id']}"
+                    {if ($d['employee_category_id']) eq ({$category['id']})}selected{/if}>{$category.name}</option>
+                {/foreach}
+            </select>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Trigger change event if the selected value is 3
+            if ($('#group').val() === '3') {
+                $('#categoryDropdown').show();
+            } else {
+                $('#categoryDropdown').hide();
+                // Set the value of the category dropdown to empty string to clear selection
+                $('#categoryId').val('');
+            }
+    
+            $('#group').change(function() {
+                if ($(this).val() === '3') {
+                    $('#categoryDropdown').show();
+                } else {
+                    $('#categoryDropdown').hide();
+                    // Set the value of the category dropdown to empty string to clear selection
+                    $('#categoryId').val('');
+                }
+            });
+        });
+    </script>
+
     <div class="form-group"><label class="col-md-2 control-label" for="currency">{$_L['Currency']}</label>
 
         <div class="col-lg-10">

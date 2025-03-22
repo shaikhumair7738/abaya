@@ -3,6 +3,9 @@
 		{
 			padding-bottom:5px;
 		}
+		.m-b-10 {
+            margin-bottom: 10px;
+        }
   </style>
 <div class="modal-header">
 	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -319,11 +322,36 @@
 						</div>
 					</div>
 				</div>
-
-
-
-
 				<!--handwork-->
+				
+				
+				<!--Category Pricing-->
+	            <div class="form-group">
+                    <label class="col-lg-2 control-label" for="category price" >Category Pricing</label>
+                    <div class="col-lg-10">
+                        <div class="category-pricing-block">
+                            {foreach from=$category_employees item=employee}
+                                {assign var=price value=0} 
+                                {foreach from=$category_pricing item=pricing}
+                                    {if $pricing.category_id == $employee.id}
+                                        {assign var=price value=$pricing.price}
+                                    {/if}
+                                {/foreach}
+                                <div class="category-pricing-fields">
+                                    <div class="row m-b-10">
+                                        <input type="hidden" name="category_id[]" value="{$employee.id}">
+					                    <div class="col-md-6">
+							                <input type="text" class="form-control" value="{$employee.name}" readonly>
+                					    </div>
+                					    <div class="col-md-6">
+                							<input type="number" class="form-control" name="category_price[]" value="{$price}" required>
+                					    </div>
+			  					    </div>
+                                </div>
+                            {/foreach}
+                        </div>
+                    </div>
+                </div>
 
 		<input type="hidden" name="id" value="{$d['id']}">
 	</form>

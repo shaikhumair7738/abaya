@@ -257,7 +257,8 @@ if($payerid == ''){
 
         $attachments = _post('attachments');
 
-
+        // Get timesheet IDs from the post request
+        $timesheet_ids = isset($_POST['timesheet_ids']) ? $_POST['timesheet_ids'] : '';
 
         if(!is_numeric($payee)){
             $payee = '0';
@@ -319,6 +320,18 @@ if($payerid == ''){
 
             $d->save();
             $tid = $d->id();
+            
+            // **Update crm_timesheet if timesheet_ids are provided**
+            if (!empty($timesheet_ids)) {
+                $idsArray = explode(',', $timesheet_ids); // Convert comma-separated values to an array
+    
+                ORM::for_table('crm_timesheet')
+                    ->where_in('id', $idsArray)
+                    ->find_many()
+                    ->set('transaction_id', $tid)
+                    ->save();
+            }
+            
             _log('New Expense: '.$description.' [TrID: '.$tid.' | Amount: '.$amount.']','Admin',$user['id']);
             _msglog('s',$_L['Transaction Added Successfully']);
             echo $tid;
@@ -1017,6 +1030,16 @@ case 'set_view_mode':
 							));
 							$d->save(); //save
 				 }
+				 
+        $timesheets = ORM::for_table('crm_timesheet')
+            ->where('transaction_id', $id)
+            ->find_many();
+        
+        foreach ($timesheets as $timesheet) {
+            $timesheet->set('transaction_id', null);
+            $timesheet->save();
+        }
+            
         if(Transaction::delete($id)){
             r2(U . 'transactions/list', 's', $_L['transaction_delete_successful']);
         }

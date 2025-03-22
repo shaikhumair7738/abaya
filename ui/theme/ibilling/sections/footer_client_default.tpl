@@ -50,7 +50,8 @@
 <script src="{$_theme}/lib/moment.js"></script>
 <script src="{$app_url}/ui/lib/blockui.js"></script>
 <script src="{$app_url}/ui/lib/toggle/bootstrap-toggle.min.js"></script>
-<script src="{$app_url}/ui/jquery.dataTables.min.js"></script>
+
+<!-- <script src="{$app_url}/ui/jquery.dataTables.min.js"></script> -->
 <script src="{$app_url}/ui/lib/numeric.js"></script>
 
 <script src="{$app_url}/ui/lib/app.js"></script>
@@ -67,6 +68,7 @@
 <script src="{$_theme}/lib/icheck/icheck.min.js"></script>
 {if isset($xfooter)}
     {$xfooter}
+    {$xfooter2}
 {/if}
 <script>
     jQuery(document).ready(function() {

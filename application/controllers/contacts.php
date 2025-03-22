@@ -23,6 +23,18 @@ switch ($action) {
 
         Event::trigger('contacts/add/');
 
+            $categories = ORM::for_table('category_employee')->find_many();
+            
+            $categoryData = [];
+            foreach ($categories as $category) {
+                $categoryData[] = [
+                    'id' => $category->id,
+                    'name' => $category->name
+                ];
+            }
+            
+            $ui->assign('categoryData', $categoryData);
+            
         $ui->assign('countries',Countries::all($config['country'])); // may add this $config['country_code']
 
         $fs = ORM::for_table('crm_customfields')->where('ctype','crm')->order_by_asc('id')->find_many();
@@ -59,6 +71,124 @@ switch ($action) {
         $ui->assign('currencies',$currencies);
         $ui->display('add-contact.tpl');
       break;
+
+case 'category-employee-list':
+    Event::trigger('contacts/category-employee-list/');
+    
+    // Fetch category data
+    $categories = ORM::for_table('category_employee')->order_by_asc('id')->find_many();
+    
+    // Assign categories to the UI with edit and delete buttons
+    $categoryData = [];
+    foreach ($categories as $category) {
+        $categoryData[] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'price' => $category->price,
+            'status' => $category->status,
+            'edit_button' => '<button class="btn btn-primary btn-xs" onclick="edit_category_modal(' . $category->id . ')"><i class="fa fa-edit"></i> Edit</button>',
+            'delete_button' => '<button class="btn btn-danger btn-xs" onclick="delete_category(' . $category->id . ')"><i class="fa fa-trash"></i> Delete</button>'
+        ];
+    }
+    $ui->assign('xheader',Asset::css(array('modal')));
+    $ui->assign('xfooter',Asset::js(array('modal')));    
+    $ui->assign('categories', $categoryData ?: []); // Ensure categories is an array even if no data is found
+    
+    $ui->display('list-all-category.tpl');
+    break;
+
+    
+    case 'add-category-employee':
+        // Trigger event
+        Event::trigger('contacts/add-category-employee/');
+       
+        // Display the add category template
+        $ui->display('add-category.tpl');
+        break;
+    
+    case 'addcategoryemployee-post':
+        // Trigger event
+        Event::trigger('contacts/addcategoryemployee-post/');
+    
+        // Process form data
+        if(isset($_POST['name'], $_POST['price'], $_POST['status'])) {
+            $categoryName = $_POST['name'];
+            $price = $_POST['price'];
+            $status = $_POST['status'];
+            
+            // Save category to database
+            $newCategory = ORM::for_table('category_employee')->create();
+            $newCategory->name = $categoryName;
+            $newCategory->price = $price;
+            $newCategory->status = $status;
+            $newCategory->save();
+    
+            // Redirect or display success message
+        } else {
+            // Handle invalid form data
+        }
+        break;
+    
+    case 'edit-category-modal':
+        Event::trigger('contacts/edit-category-modal');
+        
+        $category_id = $routes['2'];
+        $existCategory = ORM::for_table('category_employee')->where('id', $category_id)->find_one();
+        if ($existCategory) {
+            // Extract category details
+            $id = $existCategory->id;
+            $name = $existCategory->name;
+            $price = $existCategory->price;
+            $status = $existCategory->status;
+            
+            // Assign category details to the UI for rendering in the template
+            $ui->assign('category', [
+                'id' => $id,
+                'name' => $name,
+                'price' => $price,
+                'status' => $status
+            ]);
+            
+            $ui->display('category/edit-category-modal.tpl');
+        } else {
+            // Record not found, handle accordingly
+        }
+        break;
+    
+    
+    case 'edit-category-post':
+        $category_id   = _post('category_id');
+        $categoryName = _post('name');
+        $price = _post('price');
+        $status = _post('status');
+        $updatedAt   = date('Y-m-d H:i:s');
+        
+        $existCategory = ORM::for_table('category_employee')->find_one($category_id);
+        if($existCategory){
+            $existCategory->name = $categoryName;
+            $existCategory->price = $price;
+            $existCategory->status = $status;
+            $existCategory->updated_at = $updatedAt;
+            $existCategory->save();
+            _msglog('s', $_L['Category_updated_successfully!']);
+            // Return any necessary response
+        }
+        break;
+    
+    case 'delete-category':
+        $category_id = $routes['2'];
+        $existCategory = ORM::for_table('category_employee')->where('id', $category_id)->find_one();
+        if ($existCategory) {
+            $existCategory->delete();
+            _msglog('s', $_L['Category_deleted_successfully!']);
+            // Redirect or refresh the page after deletion
+        } else {
+            // Record not found, handle accordingly
+        }
+        break;
+    
+    
+
 
     case 'summary':
 
@@ -213,6 +343,540 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
             }
         break;        
 
+        /*start - timesheet*/
+        case 'employee-timesheet':
+            Event::trigger('contacts/employee-timesheet/');
+            $cid = _post('cid');
+            $d = ORM::for_table('crm_accounts')->find_one($cid);
+            if($d)
+            {
+                $ui->assign('cid',$cid);
+                $ui->assign('employee',$d);
+                $ui->display('timesheet/ajax.contact-timesheet-employee.tpl');                
+            }
+        break;  
+        
+        case 'list-ajax-timesheet':  
+            Event::trigger('contacts/list-ajax-timesheet/');
+        
+            $response = array();
+            
+            try {
+                ## Read value
+                $draw = $_POST['draw'];
+                $start = $_POST['start'];
+                $rowperpage = $_POST['length'];
+                $columnIndex = $_POST['order'][0]['column'];
+                $columnName = $_POST['columns'][$columnIndex]['data'];
+                $columnSortOrder = $_POST['order'][0]['dir'];
+                
+                $employee_id =  isset($_POST['employee_id']) ? $_POST['employee_id'] : '';
+                $todate  = isset($_POST['todate']) ? $_POST['todate'] : '';
+                $fromdate  = isset($_POST['fromdate']) ? $_POST['fromdate'] : '';
+                
+                $payment_status = isset($_POST['payment_status']) ? $_POST['payment_status'] : '';
+                $salary_type = isset($_POST['salary_type']) ? $_POST['salary_type'] : '';
+        
+                // Retrieve the salery_type of the employee from the crm_accounts table
+                // $employee = ORM::for_table('crm_accounts')->find_one($employee_id);
+                // $salery_type = $employee ? str_replace('_', ' ', strtoupper($employee->salery_type)) : null;
+                // var_dump($salery_type);
+                
+                // Initialize the ORM query for counting total records
+                $totalRecordQuery = ORM::for_table('crm_timesheet')->select('id');
+                
+                // Apply filters based on inputs
+                if(!empty($employee_id)) {
+                    $totalRecordQuery->where('employee_id', $employee_id);
+                } 
+                if (!empty($fromdate) && !empty($todate)) {
+                    $totalRecordQuery->where_gte('date', $fromdate)->where_lte('date', $todate);
+                }
+                if ($payment_status == 'paid') {
+                    $totalRecordQuery->where_not_null('transaction_id');
+                } elseif ($payment_status == 'unpaid') {
+                    $totalRecordQuery->where_null('transaction_id');
+                }
+                if ($salary_type == 'per_piece') {
+                    $totalRecordQuery->where_not_null('invoice_alocation_id');
+                } elseif ($salary_type == 'per_hour') {
+                    $totalRecordQuery->where_null('invoice_alocation_id');
+                }
+
+                // Count total records without pagination
+                $totalRecordCount = $totalRecordQuery->count();
+                
+                // Initialize the ORM query for fetching records
+                $recordQuery = ORM::for_table('crm_timesheet');
+                // $recordQuery = ORM::for_table('crm_timesheet')
+                //     ->select('crm_timesheet.*')
+                //     ->select('sys_invoices.invoicenum', 'invoicenum') // Fetch invoicenum if available
+                //     ->left_outer_join('invoice_alocation', 'crm_timesheet.invoice_alocation_id = invoice_alocation.id')
+                //     ->left_outer_join('sys_invoices', 'invoice_alocation.invoice_id = sys_invoices.id'); // Use left join
+
+                
+                // Apply filters based on inputs
+                if(!empty($employee_id)) {
+                    $recordQuery->where('employee_id', $employee_id);
+                }
+                if (!empty($fromdate) && !empty($todate)) {
+                    $recordQuery->where_gte('date', $fromdate)->where_lte('date', $todate);
+                }
+                if ($payment_status == 'paid') {
+                    $recordQuery->where_not_null('transaction_id');
+                } elseif ($payment_status == 'unpaid') {
+                    $recordQuery->where_null('transaction_id');
+                }
+            
+                if ($salary_type == 'per_piece') {
+                    $recordQuery->where_not_null('invoice_alocation_id');
+                } elseif ($salary_type == 'per_hour') {
+                    $recordQuery->where_null('invoice_alocation_id');
+                }
+// echo '<pre>';
+// var_dump($recordQuery);
+// echo '</pre>';
+// exit;
+                $Records = $recordQuery->find_many();
+                
+                // Calculate earnAmountSum for displayed records
+                $earnAmountSumTotal = 0;
+                foreach ($Records as $record) {
+                    $earnAmountSumTotal += round($record->earn_amount, 2);
+                }
+                
+                // Fetch records with pagination limits
+                $records = $recordQuery->offset($start)
+                    ->limit($rowperpage)
+                    ->find_many();
+        
+
+                $earnAmountSum = 0;
+                foreach ($records as $record) {
+                    $earnAmountSum += round($record->earn_amount, 2);
+                }
+                            
+                if($columnSortOrder == 'asc') {
+                    $recordQuery->order_by_asc($columnName);
+                }
+                elseif($columnSortOrder == 'desc') {
+                    $recordQuery->order_by_desc($columnName);
+                }
+        
+                // Prepare data for DataTables
+                $data = array();
+                $sr = $start + 1;
+
+                // Initialize variables
+                $timesheetIds   = []; // Fix: Initialize array
+                $invoiceNums    = [];  // Fix: Initialize array
+                foreach($records as $record) {
+                    if ($record->earn_amount > 0) { // Exclude records with earn_amount = 0
+                        $timesheetIds[] = $record->id; 
+                    }
+                    // $timesheetIds[] = $record->id; // Store all timesheet IDs
+                    $employeeId     = $record->employee_id;
+                    
+                    // Fetch invoice_alocation_id for each record
+                    $invoice_alocation = ORM::for_table('invoice_alocation')
+                        ->select('invoice_id')
+                        ->where('id', $record->invoice_alocation_id)
+                        ->find_one();
+                    
+                    // Fetch invoicenum from sys_invoices if invoice_id is available
+                    $invoicenum = 'N/A'; // Default to 'N/A' if invoicenum is not available
+                    if ($invoice_alocation) {
+                        $invoice_id = $invoice_alocation->invoice_id; // Extract the invoice_id from the result
+                    
+                        // Fetch invoicenum from sys_invoices using the invoice_id
+                        $invoice = ORM::for_table('sys_invoices')
+                            ->select('invoicenum')
+                            ->where('id', $invoice_id)
+                            ->find_one();
+                    
+                        if ($invoice) {
+                            $invoiceNums[] = $invoice->invoicenum; // Store all invoice numbers
+                            $invoicenum = '<a href="' . APP_URL . '/?ng=invoices/view/' . $invoice_id . '/" target="_blank">' . $invoice->invoicenum . '</a>';
+                        }
+                    }
+
+                    $event1 = "edit_timesheet_modal('".$record->id."')";
+                    $payment_status_text = !empty($record->transaction_id) ? 'Paid' : 'Unpaid';
+                    $edit = '';
+                    if($payment_status_text === 'Unpaid'){
+                        $edit = '<a href="javascript:void(0);" class="btn btn-primary btn-xs" onclick="'.$event1.'"><i class="fa fa-edit"></i> edit</a>';  
+                    }
+                    $salery_type = $record->invoice_alocation_id ? 'Per Piece' : 'Per Hour';
+                    
+                    // Remove duplicate invoices and timesheet IDs
+                    $invoiceNums = array_unique($invoiceNums);
+                    $timesheetIds = array_unique($timesheetIds);
+                    
+                    // Convert arrays to comma-separated values
+                    $invoiceDescription = !empty($invoiceNums) ? implode(", ", $invoiceNums) . " " . date("F Y") . " Salary" : "Salary";
+                    $timesheetIdsParam = !empty($timesheetIds) ? implode(",", $timesheetIds) : '';
+                    
+                    // Prepare Pay Now button data
+                    $payNowButton = "";
+                    if(!empty($timesheetIdsParam) && $payment_status == 'unpaid'){
+                        if (!empty($invoiceNums) && $salary_type == 'per_piece') {
+                            $payNowButton = '<a id="pay-now-action" href="' . APP_URL . '/?ng=transactions/expense&description=' . urlencode($invoiceDescription) . '&total_amount=' . $earnAmountSum . '&employee_id=' . $employeeId . '&timesheet_ids=' . urlencode($timesheetIdsParam) . '" target="_blank">Pay Now</a>';
+                        }elseif(!empty($fromdate) && !empty($todate) && $salary_type == 'per_hour'){
+                            $description = $fromdate . " To " . $todate . " Salary";
+                            $payNowButton = '<a id="pay-now-action" href="' . APP_URL . '/?ng=transactions/expense&description=' . urlencode($description) . '&total_amount=' . $earnAmountSum . '&employee_id=' . $employeeId . '&timesheet_ids=' . urlencode($timesheetIdsParam) . '" target="_blank">Pay Now</a>';
+                        }
+                    }
+                    
+                    // $invoicenum = $record->invoicenum 
+                    //     ? '<a href="'.APP_URL.'/?ng=invoices/view/'.$record->invoice_id.'/" target="_blank">'.$record->invoicenum.'</a>' 
+                    //     : 'N/A'; // Default to 'N/A' if invoicenum is null
+                    
+                    $data[] = array( 
+                        "sr"                => $sr,                      
+                        "employee_type"     => $salery_type,                      
+                        "checkin"           => $record->checkin,
+                        "checkout"          => $record->checkout,
+                        "qty"               => $record->qty,
+                        "amount"            => $record->amount,
+                        "earn_amount"       => $record->earn_amount,
+                        "earnAmountSum"     => ($totalRecordCount > 0) ? ($totalRecordCount < 10 ? $earnAmountSum : $earnAmountSumTotal) : 0,
+                        "payNowButton"      => $payNowButton ?? '',
+                        "invoicenum"        => $invoicenum,
+                        "payment_status"    => $payment_status_text,
+                        "remarks"           => $record->remarks,
+                        "date"              => $record->date,
+                        "action"            => $edit,
+                    ); 
+                    $sr++;    
+                }
+                                // Calculate earnAmountSum for displayed records
+                // echo '<pre>';
+                // var_dump($totalRecordCount);
+                // echo '</pre>';
+                // exit;
+                // Prepare response for DataTables
+                $response = array(
+                    "draw" => intval($draw),
+                    "iTotalRecords" => $totalRecordCount,
+                    "iTotalDisplayRecords" => $totalRecordCount,
+                    "aaData" => $data,
+                    "earnAmountSum" => ($totalRecordCount > 0) ? ($totalRecordCount < 10 ? $earnAmountSum : $earnAmountSumTotal) : 0,
+                    "payNowButton" => $payNowButton
+                );
+            } catch (Exception $e) {
+                // Handle any exceptions here, possibly by setting an error flag in the response
+                $response = array(
+                    "error" => "An error occurred: " . $e->getMessage()
+                );
+            }
+            
+            // Output response as JSON
+            echo json_encode($response);
+            $ui->assign('earnAmountSum', $totalRecordCount < 10 ? $earnAmountSum : $earnAmountSumTotal);
+            $ui->assign('payNowButton', $payNowButton);
+        break;
+        
+        
+        case 'edit-timesheet-modal': //in use
+            Event::trigger('contacts/edit-timesheet-modal/');
+            $timesheet_id = $routes['2'];
+            $timesheet = ORM::for_table('crm_timesheet')->find_one($timesheet_id);
+            if ($timesheet) {
+                $employee_id = $timesheet->employee_id;
+                $employee = ORM::for_table('crm_accounts')->where('id', $employee_id)->find_one();
+                if ($employee) {
+                    $salery_type = $employee->salery_type;
+                } else {
+                    // Handle the case where employee record is not found
+                }
+            } else {
+                // Handle the case where timesheet record is not found
+            }
+            // Check if timesheet's date is today's date
+            $is_today = false; // Default to false
+            $today = new DateTime(); // Get current date
+            if (isset($timesheet->date)) { // Assuming 'date' is the relevant field in crm_timesheet
+                $timesheet_date = new DateTime($timesheet->date); // Convert to DateTime
+                if ($timesheet_date->format('Y-m-d') === $today->format('Y-m-d')) {
+                    $is_today = true;
+                }
+            }
+                $timesheet_allocation = $timesheet->invoice_alocation_id ?? null;
+                $ui->assign('timesheet_allocation', $timesheet_allocation);
+                $ui->assign('is_today', $is_today);
+                $ui->assign('salery_type', $salery_type);
+                $ui->assign('timesheet', $timesheet);
+                $ui->display('timesheet/edit-timesheet-modal.tpl');
+        break;
+        
+    
+       case 'edit-timesheet-post':
+            $record_id   = _post('timesheet_id');
+            $type        = _post('type');
+            $checkIn     = _post('checkin');
+            $checkOut    = _post('checkout');
+            $remarks     = _post('remarks');
+            $qty         = _post('qty');
+            $amount      = _post('amount');
+            $date        = date('Y-m-d', strtotime(_post('checkout')));
+            $today       = date('Y-m-d');
+            $updatedAt   = date('Y-m-d H:i:s');
+            
+            // Fetch the timesheet record
+            $timesheet = ORM::for_table('crm_timesheet')->find_one($record_id);
+            
+            if ($timesheet) {
+                $timesheet_allocation = $timesheet->invoice_alocation_id;
+        
+                // Debugging: Output values received from the form to error log
+                // error_log('Received data:');
+                // error_log('qty: ' . $qty);
+                // error_log('amount: ' . $amount);
+                // error_log('timesheet_allocation: ' . $timesheet_allocation);
+                // error_log('checkin: ' . $checkIn);
+                // error_log('checkout: ' . $checkOut);
+        
+                // Prevent updates if the checkout date is today and no allocation exists
+                if ($timesheet->date === $today && (!$timesheet_allocation || $timesheet_allocation == '')) {
+                    // error_log('Timesheet for today cannot be modified!');
+                    echo 'Timesheet for today cannot be modified!';
+                    return; // Exit the function
+                }
+        
+                // Case: If timesheet has an allocation and the type is per_hour or per_piece
+                if (($type == 'per_hour' || $type == 'per_piece') && $timesheet_allocation && (empty($checkIn) && empty($checkOut))) {
+                    // Just update qty and amount if there's an allocation ID
+                    // error_log('Updating qty and amount for allocation...');
+        
+                    $timesheet->checkin = null;
+                    $timesheet->checkout = null;
+                    $timesheet->qty = $qty;
+                    $timesheet->amount = $amount;
+        
+                    // Debugging: Check if qty and amount are set correctly
+                    // error_log('Updated qty: ' . $timesheet->qty);
+                    // error_log('Updated amount: ' . $timesheet->amount);
+        
+                    // Calculate earn_amount using qty * amount
+                    $timesheet->earn_amount = ($qty != null) ? ($qty * $amount) : ($timesheet->qty * $timesheet->amount);
+        
+                    // Debugging: Output the calculated earn_amount
+                    // error_log('Calculated earn_amount: ' . $timesheet->earn_amount);
+                } 
+                // Case: If no allocation and type is per_hour, calculate based on checkin/checkout times
+                elseif (!empty($checkIn) && !empty($checkOut)) {
+                    // error_log('Calculating qty based on checkin/checkout...');
+        
+                    $timesheet->checkin = date('Y-m-d H:i:s', strtotime($checkIn));
+                    $timesheet->checkout = date('Y-m-d H:i:s', strtotime($checkOut));
+        
+                    // Debugging: Check if checkin and checkout are valid
+                    // error_log('checkin: ' . $timesheet->checkin);
+                    // error_log('checkout: ' . $timesheet->checkout);
+        
+                    // Calculate hours worked
+                    $checkInTimestamp = strtotime($timesheet->checkin);
+                    $checkOutTimestamp = strtotime($timesheet->checkout);
+                    if ($checkInTimestamp && $checkOutTimestamp) {
+                        $seconds_diff = $checkOutTimestamp - $checkInTimestamp;
+                        $hours = $seconds_diff / (60 * 60); // Convert seconds to hours
+                        $timesheet->qty = $hours;
+                        $timesheet->earn_amount = $hours * $amount;
+        
+                        // Debugging: Check the calculated hours and earn_amount
+                        // error_log('Calculated hours: ' . $hours);
+                        // error_log('Calculated earn_amount: ' . $timesheet->earn_amount);
+                    } else {
+                        // error_log('Invalid checkin or checkout time format.');
+                        echo 'Invalid checkin or checkout time format.';
+                        return; // Exit if there's an error in time calculation
+                    }
+                }
+        
+                // Update other fields like remarks and updated_at
+                $timesheet->remarks = $remarks;
+                $timesheet->updated_at = $updatedAt;
+        
+                $timesheet->save();
+                _msglog('s',$_L['Timesheet_updated_successfully!']);
+                echo $timesheet->id();
+            } else {
+                echo 'Timesheet not found.';
+            }
+        break;
+
+        
+        /*
+        case 'edit-timesheet-modal': //in use
+            Event::trigger('sales/add/');
+            $timesheet_id = $routes['2'];
+            $timesheet = ORM::for_table('crm_timesheet')->find_one($timesheet_id); 
+            if ($timesheet) {
+                $employee_id = $timesheet->employee_id;
+                $employee = ORM::for_table('crm_accounts')->where('id', $employee_id)->find_one();
+                if ($employee) {
+                    // $salery_type = $employee->salery_type;
+                    $salery_type = $timesheet->invoice_alocation_id ? 'per_piece' : 'per_hour';
+                } else {
+                    // Handle the case where employee record is not found
+                }
+            } else {
+                // Handle the case where timesheet record is not found
+            }
+            
+            // Check if timesheet's date is today's date
+            $is_today = false; // Default to false
+            $today = new DateTime(); // Get current date
+            if (isset($timesheet->date)) { // Assuming 'date' is the relevant field in crm_timesheet
+                $timesheet_date = new DateTime($timesheet->date); // Convert to DateTime
+                if ($timesheet_date->format('Y-m-d') === $today->format('Y-m-d')) {
+                    $is_today = true;
+                }
+            }
+    
+            $ui->assign('is_today', $is_today);
+            $ui->assign('salery_type', $salery_type);
+            $ui->assign('timesheet', $timesheet);
+            $ui->display('timesheet/edit-timesheet-modal.tpl');
+        break;   
+        
+        case 'edit-timesheet-post':
+            $record_id   = _post('timesheet_id');
+            $type        = _post('type');
+            $checkIn     = _post('checkin');
+            $checkOut    = _post('checkout');
+            $remarks = _post('remarks');
+            $qty         = _post('qty');
+            $date        = date('Y-m-d', strtotime(_post('checkout')));
+            $updatedAt   = date('Y-m-d H:i:s');
+            
+            $timesheet = ORM::for_table('crm_timesheet')->find_one($record_id);
+
+            if($timesheet){
+                
+                $timesheet->checkin = ($type == 'per_hour') ? date('Y-m-d H:i:s', strtotime(_post('checkin'))) : null ;
+                $timesheet->checkout = ($type == 'per_hour') ? date('Y-m-d H:i:s', strtotime(_post('checkout'))) : null ;
+                $checkIn  = strtotime($timesheet->checkin);
+                $checkOut = strtotime($timesheet->checkout);
+                $seconds_diff = $checkOut - $checkIn;
+                $hours = $seconds_diff / (60 * 60); // Convert seconds to hours
+                $timesheet->qty = ($type == 'per_hour') ? $hours : $qty;
+                $timesheet->earn_amount = $timesheet->qty * $timesheet->amount;
+                $timesheet->remarks = $remarks;
+                $timesheet->updated_at = $updatedAt;
+                
+                $timesheet->save();
+                _msglog('s',$_L['Timesheet_updated_successfully!']);
+                echo $timesheet->id();
+            }
+        break;        
+        */
+        case 'set-salery-popup-form':
+            $id = $routes['2'];
+            $d = ORM::for_table('crm_accounts')->find_one($id);
+            $ui->assign('d',$d);
+            $ui->assign('_theme',$_theme);
+            $ui->display('timesheet/set-salery-popup-form.tpl');
+        break;      
+        
+        case 'set-salery-type-post':
+            $msg = '';
+            $id   = _post('id');
+            $salery_type = _post('salery_type');
+            $salery_amt = _post('salery_amt');
+            $empcode = _post('empcode');
+            if($salery_type == ''){
+                $msg .= 'Salery type is required <br>';
+            }
+            if($salery_type == 'per_hour' && $salery_amt == ''){
+                $msg .= 'Salery amount is required <br>';
+            }
+            if ($salery_type == 'per_hour') {
+                if($empcode == ''){
+                    $msg .= 'Employee code is required <br>';
+                }
+            }
+ 
+    
+            if($msg == ''){
+                $d = ORM::for_table('crm_accounts')->find_one($id);
+                if($d){
+                    $d->salery_type = $salery_type;
+                    $d->salery_amt = $salery_amt;
+                    if ($salery_type == 'per_hour') {
+                        $d->emp_code = $empcode; // Save employee code if hourly
+                    }
+                    $d->save();
+                    _msglog('s',$_L['Updated_successfully!']);
+                    echo $d->id();
+                }
+            }
+            else{
+                echo $msg;
+            }
+        break;
+        
+        case 'timesheet-popup-form':
+            $id = $routes['2'];
+            $employee = ORM::for_table('crm_accounts')->find_one($id);
+            $employee_timesheet = ORM::for_table('crm_timesheet')->where('date', date('Y-m-d'))->where('employee_id', $id)->where_null('invoice_alocation_id')->find_one();
+            $ui->assign('employee',$employee);
+            $ui->assign('timesheet',$employee_timesheet);
+            $ui->assign('_theme',$_theme);
+            $ui->display('timesheet/timesheet-popup-form.tpl');
+        break;   
+        
+        case 'timesheet-entry-post':
+            $record_id   = _post('record_id');
+            $type        = _post('type');
+            $remarks     = _post('remarks');
+            $employee_id = _post('employee_id');
+            $checkIn     = ($type == 'per_hour') ? date('Y-m-d H:i:s') : null;
+            $checkOut    = ($type == 'per_hour') ? date('Y-m-d H:i:s') : null;
+            $qty         = _post('qty');
+            $amount      = _post('amount');
+            $date        = date('Y-m-d');
+            $createdAt   = date('Y-m-d H:i:s');
+            $updatedAt   = date('Y-m-d H:i:s');
+
+ 
+            $timesheet = ORM::for_table('crm_timesheet')->find_one($record_id);
+            //var_dump($timesheet->checkin);
+            if($timesheet){
+                //get hours between checkin & out
+                $checkIn  = strtotime($timesheet->checkin);
+                $checkOut = strtotime(date('Y-m-d H:i:s'));
+                $seconds_diff = $checkOut - $checkIn;
+                $hours = $seconds_diff / (60 * 60); // Convert seconds to hours
+                $timesheet->checkout = date('Y-m-d H:i:s', $checkOut);
+                $timesheet->amount = $amount;
+                $timesheet->remarks = $remarks;
+                $timesheet->qty = ($type == 'per_hour') ? $hours : $qty;
+                $timesheet->earn_amount = $timesheet->qty * $timesheet->amount;
+                $timesheet->updated_at = $updatedAt;
+            
+                $timesheet->save();
+                _msglog('s',$_L['CheckOut_successfully!']);
+                echo $timesheet->id();
+            } else {
+                // If record doesn't exist, create a new one
+                $insert = ORM::for_table('crm_timesheet')->create();
+                $insert->employee_id = $employee_id;
+                $insert->checkin     = $checkIn;
+                $insert->amount      = $amount;
+                $insert->date        = $date;
+                $insert->remarks       = $remarks;
+                $insert->qty         = ($type == 'per_hour') ? 0 : $qty;
+                $insert->earn_amount = $insert->qty * $insert->amount;                
+                $insert->created_at  = $createdAt;
+                $insert->updated_at  = $updatedAt;
+            
+                $insert->save();
+                _msglog('s',$_L['CheckIn_successfully!']);
+                echo $insert->id();
+            }
+        break;        
+        /*end - timesheet*/
 
         case 'transactions_export':
 
@@ -326,7 +990,19 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
             $gs = ORM::for_table('crm_groups')->order_by_asc('sorder')->find_array();
 
             $ui->assign('gs',$gs);
-
+            
+            $categories = ORM::for_table('category_employee')->find_many();
+            
+            $categoryData = [];
+            foreach ($categories as $category) {
+                $categoryData[] = [
+                    'id' => $category->id,
+                    'name' => $category->name
+                ];
+            }
+            
+            $ui->assign('categoryData', $categoryData);
+            
             $g_selected_id = route(4);
 
             if($g_selected_id){
@@ -502,8 +1178,8 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
         $city = _post('city');
         $state = _post('state');
         $zip = _post('zip');				        
-				$gst = _post('gst');
-				$pan = _post('pan');
+		$gst = _post('gst');
+		$pan = _post('pan');
         $country = _post('country');
         $msg = '';
 
@@ -539,7 +1215,7 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
             $gid = 0;
             $gname = '';
         }
-
+        $categoryID = _post('categoryId');
         $password = _post('password');
         $cpassword = _post('cpassword');
         $u_password = '';
@@ -568,9 +1244,10 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
             $d->city = $city;
             $d->gst_no = $gst;						            
             $d->pan = $pan;						            
-						$d->zip = $zip;
+			$d->zip = $zip;
             $d->state = $state;
             $d->country = $country;
+            $d->employee_category_id = $categoryID;
             $d->tags = Arr::arr_to_str($tags);
 
             //others
@@ -594,7 +1271,7 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
 
             $d->gname = $gname;
             $d->gid = $gid;
-
+            $d->currency = $currency;
             $d->currency = $currency;
 
             $d->save();
@@ -795,7 +1472,8 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
                 $gid = 0;
                 $gname = '';
             }
-
+            
+            $categoryID = _post('categoryId');
             $password = _post('password');
 
 
@@ -823,7 +1501,9 @@ $i = ORM::for_table('sys_invoices')->where('userid',$cid)->find_many();
 
                 $d->gname = $gname;
                 $d->gid = $gid;
-
+                
+                $d->employee_category_id = $categoryID;
+                
                 // build 4550
 
                 $d->currency = $currency;

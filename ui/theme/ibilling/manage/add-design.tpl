@@ -4,6 +4,9 @@
       {
           padding-bottom:5px;
       }
+    .m-b-10 {
+        margin-bottom: 10px;
+    }
 </style>
 <div class="wrapper wrapper-content">
    <div class="row">
@@ -170,13 +173,35 @@
                                     </div>
                                 </div>                                
 
+				
+                				<!--Category Pricing-->
+                	            <div class="form-group">
+                                    <label class="col-lg-2 control-label" for="category price" >Category Pricing</label>
+                                    <div class="col-lg-10">
+                                        <div class="category-pricing-block">
+                                            {foreach from=$category_employees item=employee}
+                                                <div class="category-pricing-fields">
+                                                    <div class="row m-b-10">
+                                                        <input type="hidden" name="category_id[]" value="{$employee.id}">
+                					                    <div class="col-md-6">
+                							                <input type="text" class="form-control" value="{$employee.name}" readonly>
+                                					    </div>
+                                					    <div class="col-md-6">
+                                							<input type="number" class="form-control" name="category_price[]" value="" placeholder="Enter Price" required>
+                                					    </div>
+                			  					    </div>
+                                                </div>
+                                            {/foreach}
+                                        </div>
+                                    </div>
+                                </div>
 
-                  <div class="form-group">
-                     <div class="col-lg-offset-2 col-lg-10">
-                        <button class="btn btn-sm btn-primary" type="submit" id="submit">{$_L['Submit']}</button>
-                     </div>
-                  </div>
-               </form>
+                    <div class="form-group">
+                        <div class="col-lg-offset-2 col-lg-10">
+                            <button class="btn btn-sm btn-primary" type="submit" id="submit">{$_L['Submit']}</button>
+                        </div>
+                    </div>
+                </form>
             </div>
          </div>
       </div>

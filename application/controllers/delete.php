@@ -141,6 +141,9 @@ switch ($action) {
 
             $y = ORM::for_table('sys_items_stock')->where('invoice_id', $id)->delete_many();
 
+            // Delete related invoice allocations
+            ORM::for_table('invoice_alocation')->where('invoice_id', $id)->delete_many();
+            
             $d->delete();
             r2(U.'invoices/list','s','Invoice Deleted Successfully');
 

@@ -36,6 +36,10 @@ switch ($action) {
         
         $ui->assign('type','Product');
 
+        // Fetch category employees
+        $categoryEmployees = ORM::for_table('category_employee')->select('id')->select('name')->find_array();
+        $ui->assign('category_employees', $categoryEmployees);
+        
         $css_arr = array('s2/css/select2.min');
         $js_arr = array('s2/js/select2.min','numeric');
         $ui->assign('xjq', '$(\'.amount\').autoNumeric(\'init\');');        
@@ -66,6 +70,9 @@ switch ($action) {
         $others_ids   = $_POST['others_id'];
         $others_qty  = $_POST['others_qty'];
 
+        $category_ids    = $_POST['category_id'];
+        $category_prices = $_POST['category_price'];
+        
         /*echo '<pre>';
         var_dump($fabric_ids);
         var_dump($fabric_qty);
@@ -84,7 +91,14 @@ switch ($action) {
         if($sales_price == ''){
             $msg .= 'Sale price is required <br>';
         }  
-        
+        if($category_prices){
+            foreach($category_prices as $price) {
+                if($price == '') {
+                    $msg .= 'Fill Each category price <br>';
+                    break; // Optional: Stop after the first missing price
+                }
+            }
+        }
         if($cloth_id == ''){
             $msg .= 'Cloth Type is required <br>';
         }  
@@ -145,6 +159,18 @@ switch ($action) {
             
             $d->cloth_id = _post('cloth_id');
             
+            // Handle Category Pricing
+            $categoryPricing = [];
+            foreach ($category_ids as $key => $category_id) {
+                if (!empty($category_id) && isset($category_prices[$key])) {
+                    $categoryPricing[] = [
+                        'category_id' => $category_id,
+                        'price' => $category_prices[$key]
+                    ];
+                }
+            }
+            $d->category_pricing = json_encode($categoryPricing);
+            
             $img_array = array();
             $count     = count($_FILES['design_images']);
 
@@ -200,6 +226,9 @@ switch ($action) {
     $others_ids   = $_POST['others_id'];
     $others_qty  = $_POST['others_qty'];    
 
+    $category_ids    = $_POST['category_id'];
+    $category_prices = $_POST['category_price'];
+    
     $msg = '';
    
     if($name == ''){
@@ -207,8 +236,16 @@ switch ($action) {
     }
     if($sales_price == ''){
         $msg .= 'Sale price is required <br>';
-    }        
-    
+    }     
+    if($category_prices){
+        foreach($category_prices as $price) {
+            if($price == '') {
+                $msg .= 'Fill Each category price <br>';
+                break; // Optional: Stop after the first missing price
+            }
+        }
+    }
+
     if($msg == ''){
         $d = ORM::for_table('sys_designs')->find_one($id);
         $d->name = $name;
@@ -257,6 +294,18 @@ switch ($action) {
         $d->others = json_encode($other);               
         
         $d->cloth_id = _post('cloth_id');        
+        
+        // Handle Category Pricing
+        $categoryPricing = [];
+        foreach ($category_ids as $key => $category_id) {
+            if (!empty($category_id) && isset($category_prices[$key])) {
+                $categoryPricing[] = [
+                    'category_id' => $category_id,
+                    'price' => $category_prices[$key]
+                ];
+            }
+        }
+        $d->category_pricing = json_encode($categoryPricing);
         
         $old = $d->image;
         $img_array = array();
@@ -324,14 +373,21 @@ switch ($action) {
             $cloths = ORM::for_table('sys_cloths')->find_many();
             $ui->assign('cloths', $cloths);            
             $ui->assign('d',$d);
+
+            // Fetch category employees
+            $categoryEmployees = ORM::for_table('category_employee')->select('id')->select('name')->find_array();
+            $ui->assign('category_employees', $categoryEmployees);
+    
+            // // Decode category pricing JSON
+            $categoryPricing = json_decode($d->category_pricing, true) ?: [];
+            $ui->assign('category_pricing', $categoryPricing);
+            
             $ui->display('manage/edit-design.tpl');
         }
         else
         {
             echo 'not found';
         }
-
-
 
         break;
 

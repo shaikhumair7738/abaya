@@ -148,6 +148,7 @@
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-9">
                             <input type="hidden" name="attachments" id="attachments" value="">
+                            <input type="hidden" name="timesheet_ids" id="timesheet_ids" value="">
                             <button type="submit" id="submit" class="btn btn-primary"><i class="fa fa-check"></i> {$_L['Submit']}</button>
                         </div>
                     </div>
@@ -233,5 +234,46 @@
 
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        // Function to get URL parameters
+        function getUrlParam(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Fetch GET parameters
+        var description = getUrlParam('description'); 
+        var amount = getUrlParam('total_amount'); 
+        var employeeId = getUrlParam('employee_id'); 
+        var timesheetIds = getUrlParam('timesheet_ids'); 
+
+        // Set values in the form
+        if (description) {
+            $('#description').val(decodeURIComponent(description));
+        }
+        if (amount) {
+            $('#amount').val(amount);
+        }
+        if (employeeId) {
+            $('#payee').val(employeeId).trigger('change'); // Select Payee
+        }
+        if (timesheetIds) {
+            if ($('#timesheet_ids').length === 0) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'timesheet_ids',
+                    name: 'timesheet_ids',
+                    value: timesheetIds
+                }).appendTo('#tform'); // Ensure it's inside the form
+            } else {
+                $('#timesheet_ids').val(timesheetIds);
+            }
+
+            // Set category as "Salary"
+            $('#cats').val("Salary").trigger('change');
+        }
+    });
+</script>
 
 {include file="sections/footer.tpl"}

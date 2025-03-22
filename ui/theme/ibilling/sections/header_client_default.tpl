@@ -58,6 +58,9 @@
     {/if}
 
     {$_c['header_scripts']}
+<script src="https://alabaya-v2.mbills.in/ui/theme/ibilling/js/jquery-1.10.2.js"></script>
+
+<script src="https://alabaya-v2.mbills.in/ui/theme/ibilling/js/jquery-ui-1.10.4.min.js"></script>
 
 </head>
 
@@ -72,20 +75,21 @@
                     <li {if $_application_menu eq 'dashboard'}class="active"{/if}><a href="{$_url}client/dashboard/">
                             <i class="icon-th-large-outline"></i>
                             <span class="nav-label">{$_L['Dashboard']}</span></a></li>
-                    {$client_extra_nav[1]}
-
-                    <li {if $_application_menu eq 'invoices'}class="active"{/if}><a href="{$_url}client/invoices/"><i class="icon-credit-card-1"></i> <span class="nav-label">{$_L['Invoices']}</span></a></li>
-                    {$client_extra_nav[2]}
+                            
+                    {if Contacts::details()->gid == 3}
+                        {$client_extra_nav[1]}
+                        <li {if $_application_menu eq 'employee_invoices'}class="active"{/if}><a href="{$_url}client/employee_invoices/"><i class="icon-credit-card-1"></i> <span class="nav-label">{$_L['Invoices']}</span></a></li>
+                    {else}
+                        {$client_extra_nav[1]}
+                        <li {if $_application_menu eq 'invoices'}class="active"{/if}><a href="{$_url}client/invoices/"><i class="icon-credit-card-1"></i> <span class="nav-label">{$_L['Invoices']}</span></a></li>
+                    {/if}
+                    <!-- {$client_extra_nav[2]}
                     <li {if $_application_menu eq 'quotes'}class="active"{/if}><a href="{$_url}client/quotes/"><i class="icon-article"></i> <span class="nav-label">{$_L['Quotes']}</span></a></li>
+                    -->
                     {$client_extra_nav[3]}
                     <li {if $_application_menu eq 'transactions'}class="active"{/if}><a href="{$_url}client/transactions/"><i class="icon-database"></i> <span class="nav-label">{$_L['Transactions']}</span></a></li>
                     {$client_extra_nav[4]}
                     <li {if $_application_menu eq 'profile'}class="active"{/if}><a href="{$_url}client/profile/"><i class="icon-user-1"></i> <span class="nav-label">{$_L['Profile']}</span></a></li>
-
-
-
-
-
 
                 </ul>
 

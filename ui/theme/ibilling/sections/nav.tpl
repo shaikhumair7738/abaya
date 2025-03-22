@@ -33,6 +33,10 @@
 
     <li {if $_application_menu eq 'dashboard'}class="active"{/if}><a href="{$_url}{$_c['redirect_url']}/"><i class="fa fa-tachometer"></i> <span class="nav-label">{$_L['Dashboard']}</span></a></li>
 
+    <li {if $_application_menu eq 'timesheet'}class="active"{/if}>
+        <a href="{$_url}timesheet"><i class="fa fa-clock-o"></i><span class="nav-label">Timesheet</span></a>
+    </li>
+
 
 
 
@@ -45,6 +49,8 @@
             <li><a href="{$_url}contacts/add/">Add Contact</a></li>
 
             <li><a href="{$_url}contacts/list/">List Contacts</a></li>
+            <li><a href="{$_url}contacts/add-category-employee/">Add Category</a></li>
+            <li><a href="{$_url}contacts/category-employee-list/">List Category</a></li>
             <!--<li><a href="{$_url}contacts/groups/">{$_L['Groups']}</a></li>-->
             {foreach $sub_menu_admin['crm'] as $sm_crm}
 
